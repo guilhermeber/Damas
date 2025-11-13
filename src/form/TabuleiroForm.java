@@ -200,6 +200,9 @@ public class TabuleiroForm extends JFrame {
     }
 
     private void cliqueCasa(int r, int c) {
+        // Debug
+        System.out.println("[CLIENTE] Clique em (" + r + "," + c + ") - conectado=" + conectado + " minhavez=" + minhavez);
+        
         // Verifica se está conectado e se é sua vez
         if (!conectado || !minhavez) {
             if (conectado) {
@@ -379,6 +382,9 @@ public class TabuleiroForm extends JFrame {
                 String msgType = GameProtocol.getMessageType(message);
                 String content = GameProtocol.getMessageContent(message);
                 
+                // Debug
+                System.out.println("[CLIENTE] Recebeu: " + msgType + " | " + content);
+                
                 switch (msgType) {
                     case GameProtocol.WAIT_FOR_PLAYER:
                         SwingUtilities.invokeLater(() -> 
@@ -390,13 +396,13 @@ public class TabuleiroForm extends JFrame {
                         SwingUtilities.invokeLater(() -> {
                             String cor = ehJogadorBranco ? "BRANCAS (⚪)" : "PRETAS (⚫)";
                             turnoLabel.setText("Você joga com: " + cor);
-                            JOptionPane.showMessageDialog(TabuleiroForm.this, 
-                                "Jogo iniciado! Você joga com " + cor);
+                            System.out.println("[CLIENTE] Sou jogador: " + (ehJogadorBranco ? "BRANCO" : "PRETO"));
                         });
                         break;
                         
                     case GameProtocol.YOUR_TURN:
                         minhavez = true;
+                        System.out.println("[CLIENTE] É minha vez agora! minhavez=" + minhavez);
                         SwingUtilities.invokeLater(() -> {
                             turnoLabel.setText("SUA VEZ!");
                             turnoLabel.setForeground(Color.GREEN);
