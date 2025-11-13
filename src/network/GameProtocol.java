@@ -79,8 +79,11 @@ public class GameProtocol {
      * Extrai o tipo da mensagem
      */
     public static String getMessageType(String message) {
-        if (message == null || !message.contains(SEPARATOR)) {
+        if (message == null || message.isEmpty()) {
             return "";
+        }
+        if (!message.contains(SEPARATOR)) {
+            return message; // Mensagens sem conteúdo (YOUR_TURN, MOVE_INVALID, etc.)
         }
         return message.substring(0, message.indexOf(SEPARATOR));
     }
@@ -89,7 +92,7 @@ public class GameProtocol {
      * Extrai o conteúdo da mensagem
      */
     public static String getMessageContent(String message) {
-        if (message == null || !message.contains(SEPARATOR)) {
+        if (message == null || message.isEmpty() || !message.contains(SEPARATOR)) {
             return "";
         }
         return message.substring(message.indexOf(SEPARATOR) + 1);

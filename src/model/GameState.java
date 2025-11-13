@@ -18,14 +18,20 @@ public class GameState {
     
     /**
      * Inicializa o tabuleiro com as peças nas posições iniciais
+     * Pretas (⚫) nas linhas 0-2, Brancas (⚪) nas linhas 5-7
+     * Apenas nas casas escuras (onde r+c é ímpar)
      */
     private void initializeBoard() {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
                 board[r][c] = "";
+                // Casas escuras são onde (r + c) é ímpar
                 if ((r + c) % 2 == 1) {
-                    if (r < 3) board[r][c] = "⚫";
-                    if (r > 4) board[r][c] = "⚪";
+                    if (r < 3) {
+                        board[r][c] = "⚫"; // Pretas no topo
+                    } else if (r > 4) {
+                        board[r][c] = "⚪"; // Brancas no fundo
+                    }
                 }
             }
         }
@@ -37,16 +43,29 @@ public class GameState {
      */
     public synchronized boolean executeMove(int r1, int c1, int r2, int c2) {
         String piece = board[r1][c1];
-        if (piece.isEmpty()) return false;
+        if (piece.isEmpty()) {
+            System.out.println("[GAMESTATE] Movimento inválido: origem vazia");
+            return false;
+        }
         
         boolean isWhite = piece.contains("⚪");
-        if (isWhite != whiteTurn) return false;
+        if (isWhite != whiteTurn) {
+            System.out.println("[GAMESTATE] Movimento inválido: não é a vez de " + (isWhite ? "BRANCO" : "PRETO") + 
+                ", vez atual: " + (whiteTurn ? "BRANCO" : "PRETO"));
+            return false;
+        }
         
         int dr = r2 - r1;
         int dc = c2 - c1;
-        if (Math.abs(dr) != Math.abs(dc)) return false;
+        if (Math.abs(dr) != Math.abs(dc)) {
+            System.out.println("[GAMESTATE] Movimento inválido: não é diagonal (dr=" + dr + ", dc=" + dc + ")");
+            return false;
+        }
         
         boolean isKing = piece.contains("D");
+        System.out.println("[GAMESTATE] Validando movimento: peça=" + piece + " de (" + r1 + "," + c1 + 
+            ") para (" + r2 + "," + c2 + ") | isKing=" + isKing + " | isWhite=" + isWhite + 
+            " | dr=" + dr + " | dc=" + dc + ")");
         
         // Verifica se há capturas obrigatórias
         List<int[]> allCaptures = findAllCaptures(whiteTurn);
@@ -76,26 +95,39 @@ public class GameState {
             return false;
         }
         
-        // Movimento simples
-        if (mustCapture) return false;
+        // Movimento simples (não-captura)
+        if (mustCapture) {
+            System.out.println("[GAMESTATE] Movimento inválido: captura obrigatória disponível");
+            return false; // Se há captura disponível, movimento simples não é permitido
+        }
         
-        if (!board[r2][c2].isEmpty()) return false;
+        if (!board[r2][c2].isEmpty()) {
+            System.out.println("[GAMESTATE] Movimento inválido: destino ocupado");
+            return false; // Destino deve estar vazio
+        }
         
         if (!isKing) {
-            if ((isWhite && dr == -1 && Math.abs(dc) == 1) ||
-                (!isWhite && dr == 1 && Math.abs(dc) == 1)) {
+            // Peça normal: move 1 casa diagonalmente
+            // Brancas sobem (dr < 0), Pretas descem (dr > 0)
+            System.out.println("[GAMESTATE] Peça normal: dr=" + dr + ", dc=" + dc + 
+                " | Direção correta? " + ((isWhite && dr < 0) || (!isWhite && dr > 0)));
+            if (Math.abs(dr) == 1 && Math.abs(dc) == 1 && ((isWhite && dr < 0) || (!isWhite && dr > 0))) {
+                System.out.println("[GAMESTATE] Movimento simples VÁLIDO!");
                 performSimpleMove(r1, c1, r2, c2);
                 whiteTurn = !whiteTurn;
                 return true;
             }
         } else {
+            // Dama: move qualquer distância na diagonal se caminho livre
             if (isPathClear(r1, c1, r2, c2)) {
+                System.out.println("[GAMESTATE] Movimento de dama VÁLIDO!");
                 performSimpleMove(r1, c1, r2, c2);
                 whiteTurn = !whiteTurn;
                 return true;
             }
         }
         
+        System.out.println("[GAMESTATE] Movimento inválido: nenhuma condição satisfeita");
         return false;
     }
     
@@ -156,9 +188,14 @@ public class GameState {
         board[r2][c2] = board[r1][c1];
         board[r1][c1] = "";
         
-        // Promove a dama
-        if (board[r2][c2].equals("⚪") && r2 == 0) board[r2][c2] = "⚪D";
-        if (board[r2][c2].equals("⚫") && r2 == 7) board[r2][c2] = "⚫D";
+        // Promove a dama quando atinge a última linha
+        // Brancas (⚪) atingem o topo (linha 0)
+        // Pretas (⚫) atingem o fundo (linha 7)
+        if (board[r2][c2].equals("⚪") && r2 == 0) {
+            board[r2][c2] = "⚪D";
+        } else if (board[r2][c2].equals("⚫") && r2 == 7) {
+            board[r2][c2] = "⚫D";
+        }
     }
     
     private boolean isPathClear(int r1, int c1, int r2, int c2) {
@@ -278,20 +315,28 @@ public class GameState {
         boolean isWhite = piece.contains("⚪");
         int[] dirs = {-1, 1};
         
-        for (int dc : dirs) {
-            if (!isKing) {
-                int dr = isWhite ? -1 : 1;
+        if (!isKing) {
+            // Peça normal: verifica 1 casa na direção permitida
+            int dr = isWhite ? -1 : 1; // Brancas sobem, pretas descem
+            for (int dc : dirs) {
                 int r2 = r + dr;
                 int c2 = c + dc;
                 if (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 && board[r2][c2].isEmpty()) {
                     return true;
                 }
-            } else {
-                for (int dr : dirs) {
+            }
+        } else {
+            // Dama: verifica todas as diagonais até encontrar obstáculo
+            for (int dr : dirs) {
+                for (int dc : dirs) {
                     int r2 = r + dr;
                     int c2 = c + dc;
-                    if (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 && board[r2][c2].isEmpty()) {
-                        return true;
+                    // Move até o limite ou até encontrar uma peça
+                    while (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8) {
+                        if (board[r2][c2].isEmpty()) {
+                            return true; // Encontrou movimento válido
+                        }
+                        break; // Bloqueado por peça
                     }
                 }
             }

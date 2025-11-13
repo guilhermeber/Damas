@@ -108,12 +108,11 @@ java -cp bin form.TabuleiroForm
 
 ### Mensagens Servidor → Cliente
 - `CONNECTED` - Confirmação de conexão
-- `WAIT` - Aguardando outro jogador
+- `WAIT_FOR_PLAYER` - Aguardando outro jogador
 - `START|WHITE` ou `START|BLACK` - Início do jogo com cor definida
 - `YOUR_TURN` - É sua vez de jogar
-- `MOVE_OK` - Movimento válido executado
 - `MOVE_INVALID` - Movimento inválido
-- `OPPONENT_MOVE|r1,c1,r2,c2` - Movimento do oponente
+- `OPPONENT_MOVE|r1,c1,r2,c2` - Movimento do oponente (enviado para ambos os jogadores)
 - `GAME_OVER|mensagem` - Fim do jogo
 - `ERROR|mensagem` - Erro ocorrido
 

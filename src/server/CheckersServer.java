@@ -161,16 +161,22 @@ public class CheckersServer {
                             String moveData = GameProtocol.getMessageContent(message);
                             int[] move = GameProtocol.parseMove(moveData);
                             
-                            if (move != null) {
+                            if (move != null && move.length == 4) {
+                                System.out.println("[SALA " + roomId + "] Recebeu movimento de " + currentPlayer + 
+                                    ": (" + move[0] + "," + move[1] + ") -> (" + move[2] + "," + move[3] + 
+                                    ") | player1Turn=" + player1Turn);
                                 boolean validMove = gameState.executeMove(move[0], move[1], move[2], move[3]);
+                                System.out.println("[SALA " + roomId + "] Movimento " + (validMove ? "VÁLIDO" : "INVÁLIDO"));
                                 
                                 if (validMove) {
                                     System.out.println("[SALA " + roomId + "] " + currentPlayer + 
                                         " moveu: (" + move[0] + "," + move[1] + ") -> (" + move[2] + "," + move[3] + ")");
                                     
-                                    currentOut.println(GameProtocol.MOVE_OK);
-                                    opponentOut.println(GameProtocol.createOpponentMoveMessage(
-                                        move[0], move[1], move[2], move[3]));
+                                    // Envia o movimento para AMBOS os jogadores
+                                    String moveMsg = GameProtocol.createOpponentMoveMessage(
+                                        move[0], move[1], move[2], move[3]);
+                                    player1Out.println(moveMsg);
+                                    player2Out.println(moveMsg);
                                     
                                     // Verifica fim de jogo
                                     String gameOverMsg = gameState.checkGameOver();
@@ -181,7 +187,10 @@ public class CheckersServer {
                                         gameRunning = false;
                                     } else {
                                         player1Turn = !player1Turn;
+                                        String nextPlayer = player1Turn ? player1Name : player2Name;
+                                        System.out.println("[SALA " + roomId + "] *** ENVIANDO YOUR_TURN para " + nextPlayer + " ***");
                                         opponentOut.println(GameProtocol.YOUR_TURN);
+                                        System.out.println("[SALA " + roomId + "] YOUR_TURN enviado!");
                                     }
                                 } else {
                                     currentOut.println(GameProtocol.MOVE_INVALID);

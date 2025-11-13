@@ -395,12 +395,14 @@ public class TabuleiroForm extends JFrame {
                         ehJogadorBranco = content.equals("WHITE");
                         SwingUtilities.invokeLater(() -> {
                             String cor = ehJogadorBranco ? "BRANCAS (⚪)" : "PRETAS (⚫)";
+                            minhavez = ehJogadorBranco;
                             turnoLabel.setText("Você joga com: " + cor);
                             System.out.println("[CLIENTE] Sou jogador: " + (ehJogadorBranco ? "BRANCO" : "PRETO"));
                         });
                         break;
                         
                     case GameProtocol.YOUR_TURN:
+                        System.out.println("[CLIENTE] *** RECEBEU YOUR_TURN - HABILITANDO TURNO ***");
                         minhavez = true;
                         System.out.println("[CLIENTE] É minha vez agora! minhavez=" + minhavez);
                         SwingUtilities.invokeLater(() -> {
@@ -409,15 +411,8 @@ public class TabuleiroForm extends JFrame {
                         });
                         break;
                         
-                    case GameProtocol.MOVE_OK:
-                        minhavez = false;
-                        SwingUtilities.invokeLater(() -> {
-                            turnoLabel.setText(AGUARDANDO_OPONENTE);
-                            turnoLabel.setForeground(Color.WHITE);
-                        });
-                        break;
-                        
                     case GameProtocol.MOVE_INVALID:
+                        minhavez = true;
                         SwingUtilities.invokeLater(() -> {
                             JOptionPane.showMessageDialog(TabuleiroForm.this, 
                                 "Movimento inválido!");
@@ -428,8 +423,16 @@ public class TabuleiroForm extends JFrame {
                     case GameProtocol.OPPONENT_MOVE:
                         int[] move = GameProtocol.parseMove(content);
                         if (move != null && move.length == 4) {
-                            SwingUtilities.invokeLater(() -> 
-                                aplicarMovimento(move[0], move[1], move[2], move[3]));
+                            System.out.println("[CLIENTE] *** RECEBEU OPPONENT_MOVE - DESABILITANDO TURNO ***");
+                            // Ambos recebem OPPONENT_MOVE, então desabilita o turno
+                            // O próximo YOUR_TURN (se vier) habilitará novamente
+                            minhavez = false;
+                            System.out.println("[CLIENTE] minhavez=" + minhavez);
+                            SwingUtilities.invokeLater(() -> {
+                                aplicarMovimento(move[0], move[1], move[2], move[3]);
+                                turnoLabel.setText(AGUARDANDO_OPONENTE);
+                                turnoLabel.setForeground(Color.WHITE);
+                            });
                         }
                         break;
                         
@@ -464,8 +467,8 @@ public class TabuleiroForm extends JFrame {
     
     private void enviarMovimento(int r1, int c1, int r2, int c2) {
         if (out != null) {
+            System.out.println("[CLIENTE] Enviando movimento: (" + r1 + "," + c1 + ") -> (" + r2 + "," + c2 + ")");
             out.println(GameProtocol.createMoveMessage(r1, c1, r2, c2));
-            aplicarMovimento(r1, c1, r2, c2);
         }
     }
     
