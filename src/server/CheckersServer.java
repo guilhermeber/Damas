@@ -26,6 +26,7 @@ public class CheckersServer {
         serverSocket = new ServerSocket(PORT);
         System.out.println("==============================================");
         System.out.println("   SERVIDOR DE DAMAS INICIADO");
+        System.out.println("   IP: " + InetAddress.getLocalHost().getHostAddress());
         System.out.println("   Porta: " + PORT);
         System.out.println("==============================================");
         
